@@ -2,13 +2,16 @@ package util
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"github.com/alewgbl/fdwctl/internal/logger"
+
 	"github.com/elgris/sqrl"
-	"github.com/jackc/pgx"
+
+	"github.com/alewgbl/fdwctl/internal/database"
+	"github.com/alewgbl/fdwctl/internal/logger"
 )
 
-func EnsureUser(ctx context.Context, dbConnection *pgx.Conn, userName string, userPassword string) error {
+func EnsureUser(ctx context.Context, dbConnection *sql.DB, userName string, userPassword string) error {
 	log := logger.Log(ctx).
 		WithField("function", "EnsureUser")
 	query, args, err := sqrl.Select("1").
@@ -24,7 +27,7 @@ func EnsureUser(ctx context.Context, dbConnection *pgx.Conn, userName string, us
 	if err != nil {
 		return fmt.Errorf("error verifying user: %s", err)
 	}
-	defer rows.Close()
+	defer database.CloseRows(ctx, rows)
 	userExists := false
 	if rows.Next() {
 		var foo int
@@ -35,6 +38,10 @@ func EnsureUser(ctx context.Context, dbConnection *pgx.Conn, userName string, us
 		if foo == 1 {
 			userExists = true
 		}
+	}
+	if rows.Err() != nil {
+		log.Errorf("error iterating result rows: %s", rows.Err())
+		return rows.Err()
 	}
 	if !userExists {
 		log.Debugf("user does not exist; creating")
@@ -51,7 +58,7 @@ func EnsureUser(ctx context.Context, dbConnection *pgx.Conn, userName string, us
 	return nil
 }
 
-func DropUser(ctx context.Context, dbConnection *pgx.Conn, username string) error {
+func DropUser(ctx context.Context, dbConnection *sql.DB, username string) error {
 	log := logger.Log(ctx).
 		WithField("function", "DropUser")
 	if username == "" {

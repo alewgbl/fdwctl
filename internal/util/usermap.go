@@ -2,17 +2,20 @@ package util
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"strings"
+
+	"github.com/elgris/sqrl"
+
+	"github.com/alewgbl/fdwctl/internal/database"
 	"github.com/alewgbl/fdwctl/internal/logger"
 	"github.com/alewgbl/fdwctl/internal/model"
-	"github.com/elgris/sqrl"
-	"github.com/jackc/pgx"
-	"strings"
 )
 
 const (
 	// usermapSQLPrefix is the WITH clause used as a prefix on the SQL statement to retrieve usermaps from the DB
-	usermapSQL = `WITH remoteuser AS (SELECT authorization_identifier, foreign_server_name, option_value AS remoteuser FROM information_schema.user_mapping_options WHERE option_name = 'user'),
+	usermapSQLPrefix = `WITH remoteuser AS (SELECT authorization_identifier, foreign_server_name, option_value AS remoteuser FROM information_schema.user_mapping_options WHERE option_name = 'user'),
 remotepassword AS (SELECT authorization_identifier, foreign_server_name, option_value AS remotepassword FROM information_schema.user_mapping_options WHERE option_name = 'password')`
 )
 
@@ -25,14 +28,14 @@ func FindUserMap(usermaps []model.UserMap, localuser string) *model.UserMap {
 	return nil
 }
 
-func GetUserMapsForServer(ctx context.Context, dbConnection *pgx.Conn, foreignServer string) ([]model.UserMap, error) {
+func GetUserMapsForServer(ctx context.Context, dbConnection *sql.DB, foreignServer string) ([]model.UserMap, error) {
 	log := logger.Log(ctx).
 		WithField("function", "GetUserMapsForServer")
 	qbuilder := sqrl.
 		Select("ru.authorization_identifier", "ru.remoteuser", "rp.remotepassword", "ru.foreign_server_name").
 		From("remoteuser ru").
 		Join("remotepassword rp ON ru.authorization_identifier = rp.authorization_identifier AND ru.foreign_server_name = rp.foreign_server_name")
-	qbuilder.Prefix(usermapSQL)
+	qbuilder.Prefix(usermapSQLPrefix)
 	if foreignServer != "" {
 		qbuilder = qbuilder.Where(sqrl.Eq{"ru.foreign_server_name": foreignServer})
 	}
@@ -49,7 +52,7 @@ func GetUserMapsForServer(ctx context.Context, dbConnection *pgx.Conn, foreignSe
 		log.Errorf("error getting users for server: %s", err)
 		return nil, err
 	}
-	defer userRows.Close()
+	defer database.CloseRows(ctx, userRows)
 	users := make([]model.UserMap, 0)
 	for userRows.Next() {
 		user := new(model.UserMap)
@@ -60,6 +63,10 @@ func GetUserMapsForServer(ctx context.Context, dbConnection *pgx.Conn, foreignSe
 			continue
 		}
 		users = append(users, *user)
+	}
+	if userRows.Err() != nil {
+		log.Errorf("error iterating result rows: %s", userRows.Err())
+		return nil, userRows.Err()
 	}
 	return users, nil
 }
@@ -86,7 +93,7 @@ func DiffUserMaps(dStateUserMaps []model.UserMap, dbUserMaps []model.UserMap) (u
 	return
 }
 
-func DropUserMap(ctx context.Context, dbConnection *pgx.Conn, usermap model.UserMap, dropLocalUser bool) error {
+func DropUserMap(ctx context.Context, dbConnection *sql.DB, usermap model.UserMap, dropLocalUser bool) error {
 	log := logger.Log(ctx).
 		WithField("function", "DropUserMap")
 	if usermap.ServerName == "" {
@@ -110,7 +117,7 @@ func DropUserMap(ctx context.Context, dbConnection *pgx.Conn, usermap model.User
 	return nil
 }
 
-func CreateUserMap(ctx context.Context, dbConnection *pgx.Conn, usermap model.UserMap) error {
+func CreateUserMap(ctx context.Context, dbConnection *sql.DB, usermap model.UserMap) error {
 	var secretValue string
 	var err error
 
@@ -139,7 +146,7 @@ func CreateUserMap(ctx context.Context, dbConnection *pgx.Conn, usermap model.Us
 	return nil
 }
 
-func UpdateUserMap(ctx context.Context, dbConnection *pgx.Conn, usermap model.UserMap) error {
+func UpdateUserMap(ctx context.Context, dbConnection *sql.DB, usermap model.UserMap) error {
 	log := logger.Log(ctx).
 		WithField("function", "UpdateUserMap")
 	if usermap.ServerName == "" {

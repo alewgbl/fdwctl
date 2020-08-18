@@ -1,11 +1,11 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/jackc/pgx"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 
@@ -42,7 +42,7 @@ var (
 		Short: "List schemas that contain foreign tables",
 		Run:   listSchema,
 	}
-	dbConnection *pgx.Conn
+	dbConnection *sql.DB
 )
 
 func init() {

@@ -2,15 +2,18 @@ package util
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"strings"
+
+	"github.com/elgris/sqrl"
+
+	"github.com/alewgbl/fdwctl/internal/database"
 	"github.com/alewgbl/fdwctl/internal/logger"
 	"github.com/alewgbl/fdwctl/internal/model"
-	"github.com/elgris/sqrl"
-	"github.com/jackc/pgx"
-	"strings"
 )
 
-func GetServers(ctx context.Context, dbConnection *pgx.Conn) ([]model.ForeignServer, error) {
+func GetServers(ctx context.Context, dbConnection *sql.DB) ([]model.ForeignServer, error) {
 	log := logger.Log(ctx).
 		WithField("function", "GetServers")
 	query, _, err := sqrl.
@@ -36,7 +39,7 @@ func GetServers(ctx context.Context, dbConnection *pgx.Conn) ([]model.ForeignSer
 		log.Errorf("error querying for servers: %s", err)
 		return nil, err
 	}
-	defer rows.Close()
+	defer database.CloseRows(ctx, rows)
 	servers := make([]model.ForeignServer, 0)
 	for rows.Next() {
 		server := new(model.ForeignServer)
@@ -46,6 +49,10 @@ func GetServers(ctx context.Context, dbConnection *pgx.Conn) ([]model.ForeignSer
 			continue
 		}
 		servers = append(servers, *server)
+	}
+	if rows.Err() != nil {
+		log.Errorf("error iterating result rows: %s", rows.Err())
+		return nil, rows.Err()
 	}
 	return servers, nil
 }
@@ -59,7 +66,7 @@ func FindForeignServer(foreignServers []model.ForeignServer, serverName string) 
 	return nil
 }
 
-func DropServer(ctx context.Context, dbConnection *pgx.Conn, servername string, cascade bool) error {
+func DropServer(ctx context.Context, dbConnection *sql.DB, servername string, cascade bool) error {
 	log := logger.Log(ctx).
 		WithField("function", "DropServer")
 	if servername == "" {
@@ -78,7 +85,7 @@ func DropServer(ctx context.Context, dbConnection *pgx.Conn, servername string, 
 	return nil
 }
 
-func CreateServer(ctx context.Context, dbConnection *pgx.Conn, server model.ForeignServer) error {
+func CreateServer(ctx context.Context, dbConnection *sql.DB, server model.ForeignServer) error {
 	log := logger.Log(ctx).
 		WithField("function", "CreateServer")
 	query := fmt.Sprintf(
@@ -97,7 +104,7 @@ func CreateServer(ctx context.Context, dbConnection *pgx.Conn, server model.Fore
 	return nil
 }
 
-func UpdateServer(ctx context.Context, dbConnection *pgx.Conn, server model.ForeignServer) error {
+func UpdateServer(ctx context.Context, dbConnection *sql.DB, server model.ForeignServer) error {
 	log := logger.Log(ctx).
 		WithField("function", "UpdateServer")
 	// Edit server hostname, port, and dbname
@@ -123,7 +130,7 @@ func UpdateServer(ctx context.Context, dbConnection *pgx.Conn, server model.Fore
 	return nil
 }
 
-func UpdateServerName(ctx context.Context, dbConnection *pgx.Conn, server model.ForeignServer, newServerName string) error {
+func UpdateServerName(ctx context.Context, dbConnection *sql.DB, server model.ForeignServer, newServerName string) error {
 	log := logger.Log(ctx).
 		WithField("function", "UpdateServerName")
 	query := fmt.Sprintf("ALTER SERVER %s RENAME TO %s", server.Name, newServerName)

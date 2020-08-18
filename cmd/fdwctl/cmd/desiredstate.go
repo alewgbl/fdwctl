@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"context"
+	"database/sql"
+
 	"github.com/alewgbl/fdwctl/internal/config"
 	"github.com/alewgbl/fdwctl/internal/database"
 	"github.com/alewgbl/fdwctl/internal/logger"
 	"github.com/alewgbl/fdwctl/internal/model"
 	"github.com/alewgbl/fdwctl/internal/util"
-	"github.com/jackc/pgx"
 	"github.com/spf13/cobra"
 )
 
@@ -114,7 +115,7 @@ func doDesiredState(cmd *cobra.Command, _ []string) {
 	log.Info("desired state applied.")
 }
 
-func applyExtensions(ctx context.Context, dbConnection *pgx.Conn) error {
+func applyExtensions(ctx context.Context, dbConnection *sql.DB) error {
 	log := logger.Log(ctx).
 		WithField("function", "applyExtensions")
 	// List extensions in DB
@@ -145,7 +146,7 @@ func applyExtensions(ctx context.Context, dbConnection *pgx.Conn) error {
 	return nil
 }
 
-func applyUserMaps(ctx context.Context, dbConnection *pgx.Conn, server model.ForeignServer) error {
+func applyUserMaps(ctx context.Context, dbConnection *sql.DB, server model.ForeignServer) error {
 	log := logger.Log(ctx).
 		WithField("function", "applyUserMaps")
 	// List Usermaps for this server in the DB
@@ -211,7 +212,7 @@ func applyUserMaps(ctx context.Context, dbConnection *pgx.Conn, server model.For
 	return nil
 }
 
-func applySchemas(ctx context.Context, dbConnection *pgx.Conn, server model.ForeignServer) error {
+func applySchemas(ctx context.Context, dbConnection *sql.DB, server model.ForeignServer) error {
 	log := logger.Log(ctx).
 		WithField("function", "applySchemas")
 	// Get DB remote schemas
