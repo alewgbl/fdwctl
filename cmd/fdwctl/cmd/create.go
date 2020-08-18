@@ -47,7 +47,6 @@ var (
 	localUser            string
 	remoteUser           string
 	remotePassword       string
-	grantSchema          string
 	serverName           string
 	localSchemaName      string
 	remoteSchemaName     string
@@ -68,7 +67,6 @@ func init() {
 	createUsermapCmd.Flags().StringVar(&localUser, "localuser", "", "local user name")
 	createUsermapCmd.Flags().StringVar(&remoteUser, "remoteuser", "", "remote user name")
 	createUsermapCmd.Flags().StringVar(&remotePassword, "remotepassword", "", "remote user password")
-	createUsermapCmd.Flags().StringVar(&grantSchema, "grantschema", "", "schema to grant read permissions on for the local user")
 	_ = createUsermapCmd.MarkFlagRequired("servername")
 	_ = createUsermapCmd.MarkFlagRequired("localuser")
 	_ = createUsermapCmd.MarkFlagRequired("remoteuser")
@@ -79,6 +77,7 @@ func init() {
 	createSchemaCmd.Flags().StringVar(&remoteSchemaName, "remoteschema", "", "the remote schema to import")
 	createSchemaCmd.Flags().BoolVar(&importEnums, "importenums", false, "attempt to auto-create ENUMs locally before import")
 	createSchemaCmd.Flags().StringVar(&importEnumConnection, "enumconnection", "", "connection string of database to import enums from")
+	// TODO: Add a flag to accept a list of users for grants
 	_ = createSchemaCmd.MarkFlagRequired("localschema")
 	_ = createSchemaCmd.MarkFlagRequired("servername")
 	_ = createSchemaCmd.MarkFlagRequired("remoteschema")
@@ -165,7 +164,6 @@ func createUsermap(cmd *cobra.Command, _ []string) {
 		RemoteSecret: model.Secret{
 			Value: remotePassword,
 		},
-		GrantSchema: grantSchema,
 	})
 	if err != nil {
 		log.Errorf("error creating user mapping: %s", err)
@@ -183,6 +181,9 @@ func createSchema(cmd *cobra.Command, _ []string) {
 		RemoteSchema:   remoteSchemaName,
 		ImportENUMs:    importEnums,
 		ENUMConnection: importEnumConnection,
+		SchemaGrants: model.Grants{
+			Users: make([]string, 0),
+		},
 	})
 	if err != nil {
 		log.Errorf("error importing foreign schema: %s", err)

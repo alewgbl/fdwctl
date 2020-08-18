@@ -10,8 +10,6 @@ type UserMap struct {
 	RemoteUser string `yaml:"remoteuser" json:"remoteuser"`
 	// RemoteSecret configures how to retrieve the optional credential for the RemoteUser user
 	RemoteSecret Secret `yaml:"remotesecret" json:"remotesecret"`
-	// GrantSchema is the name of the schema to grant read permission to for this local user
-	GrantSchema string `yaml:"grantschema,omitempty" json:"grantschema,omitempty"`
 }
 
 // Equals determines if this object is equal to the supplied object

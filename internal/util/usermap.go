@@ -136,41 +136,6 @@ func CreateUserMap(ctx context.Context, dbConnection *pgx.Conn, usermap model.Us
 		log.Errorf("error creating user mapping: %s", err)
 		return err
 	}
-	if usermap.GrantSchema != "" {
-		// Ensure the schema exists before applying grants to it
-		err = ensureSchema(ctx, dbConnection, usermap.GrantSchema)
-		if err != nil {
-			log.Errorf("error ensuring schema %s exists: %s", usermap.GrantSchema, err)
-			return err
-		}
-		log.Debugf("applying grants to schema %s for user %s", usermap.GrantSchema, usermap.LocalUser)
-		// GRANT USAGE ON SCHEMA xxxx TO yyyy
-		sb := new(strings.Builder)
-		sb.WriteString("GRANT USAGE ON SCHEMA ")
-		sb.WriteString(usermap.GrantSchema)
-		sb.WriteString(" TO ")
-		sb.WriteString(usermap.LocalUser)
-		query = sb.String()
-		log.Tracef("query: %s", query)
-		_, err = dbConnection.Exec(ctx, query)
-		if err != nil {
-			log.Errorf("error granting usage to local user: %s", err)
-			return err
-		}
-		// GRANT SELECT ON ALL TABLES IN SCHEMA xxxx TO yyyy
-		sb = new(strings.Builder)
-		sb.WriteString("GRANT SELECT ON ALL TABLES IN SCHEMA ")
-		sb.WriteString(usermap.GrantSchema)
-		sb.WriteString(" TO ")
-		sb.WriteString(usermap.LocalUser)
-		query = sb.String()
-		log.Tracef("query: %s", query)
-		_, err = dbConnection.Exec(ctx, query)
-		if err != nil {
-			log.Errorf("error granting select to local user: %s", err)
-			return err
-		}
-	}
 	return nil
 }
 

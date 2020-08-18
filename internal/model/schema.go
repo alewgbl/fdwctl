@@ -1,5 +1,11 @@
 package model
 
+// Grants represents a permissions configuration for an imported remote schema
+type Grants struct {
+	// Users is the list of users to apply the permissions to
+	Users []string `yaml:"users" json:"users"`
+}
+
 // Schema represents a foreign schema configuration
 type Schema struct {
 	// ServerName is the name of the foreign server that will be used to import the remote schema
@@ -14,4 +20,6 @@ type Schema struct {
 	ENUMConnection string `yaml:"enumconnection,omitempty" json:"enumconnection,omitempty"`
 	// ENUMSecret configures how to retrieve the optional credential for the ENUMConnection connection string
 	ENUMSecret Secret `yaml:"enumsecret,omitempty" json:"enumsecret,omitempty"`
+	// SchemaGrants is the permission configuration for this foreign schema
+	SchemaGrants Grants `yaml:"grants,omitempty" json:"grants,omitempty"`
 }
