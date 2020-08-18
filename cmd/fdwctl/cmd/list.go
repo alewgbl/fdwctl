@@ -2,15 +2,17 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/jackc/pgx/v4"
+	"github.com/olekukonko/tablewriter"
+	"github.com/spf13/cobra"
+
 	"github.com/neflyte/fdwctl/internal/config"
 	"github.com/neflyte/fdwctl/internal/database"
 	"github.com/neflyte/fdwctl/internal/logger"
 	"github.com/neflyte/fdwctl/internal/util"
-	"github.com/olekukonko/tablewriter"
-	"github.com/spf13/cobra"
-	"os"
-	"strings"
 )
 
 var (
