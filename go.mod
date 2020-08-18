@@ -1,4 +1,4 @@
-module github.com/neflyte/fdwctl
+module github.com/alewgbl/fdwctl
 
 go 1.12
 
