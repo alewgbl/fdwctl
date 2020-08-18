@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 

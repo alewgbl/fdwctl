@@ -7,7 +7,7 @@ import (
 	"github.com/alewgbl/fdwctl/internal/logger"
 	"github.com/alewgbl/fdwctl/internal/model"
 	"github.com/elgris/sqrl"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx"
 	"sort"
 	"strings"
 )
@@ -27,7 +27,7 @@ func ensureSchema(ctx context.Context, dbConnection *pgx.Conn, schemaName string
 		return err
 	}
 	log.Tracef("query: %s, args: %#v", query, args)
-	schemaRows, err := dbConnection.Query(ctx, query, args...)
+	schemaRows, err := dbConnection.Query(query, args...)
 	if err != nil {
 		log.Errorf("error checking for schema: %s", err)
 		return err
@@ -49,7 +49,7 @@ func ensureSchema(ctx context.Context, dbConnection *pgx.Conn, schemaName string
 		log.Debug("schema does not exist; creating")
 		query = fmt.Sprintf("CREATE SCHEMA %s", schemaName)
 		log.Tracef("query: %s", query)
-		_, err = dbConnection.Exec(ctx, query)
+		_, err = dbConnection.Exec(query)
 		if err != nil {
 			log.Errorf("error creating schema: %s", err)
 			return err
@@ -76,7 +76,7 @@ func getEnums(ctx context.Context, dbConnection *pgx.Conn) ([]string, error) {
 		return nil, err
 	}
 	log.Tracef("query: %s, args: %#v", query, args)
-	enumRows, err := dbConnection.Query(ctx, query, args...)
+	enumRows, err := dbConnection.Query(query, args...)
 	if err != nil {
 		log.Errorf("error querying enums: %s", err)
 		return nil, err
@@ -114,7 +114,7 @@ func getSchemaEnumsUsedInTables(ctx context.Context, dbConnection *pgx.Conn, sch
 		return nil, err
 	}
 	log.Tracef("query: %s, args: %#v", query, args)
-	enumRows, err := dbConnection.Query(ctx, query, args...)
+	enumRows, err := dbConnection.Query(query, args...)
 	if err != nil {
 		log.Errorf("error querying enums: %s", err)
 		return nil, err
@@ -150,7 +150,7 @@ func getEnumStrings(ctx context.Context, dbConnection *pgx.Conn, enumType string
 		return nil, err
 	}
 	log.Tracef("query: %s, args: %#v", query, args)
-	enumRows, err := dbConnection.Query(ctx, query, args...)
+	enumRows, err := dbConnection.Query(query, args...)
 	if err != nil {
 		log.Errorf("error querying enum data: %s", err)
 		return nil, err
@@ -186,7 +186,7 @@ func GetSchemasForServer(ctx context.Context, dbConnection *pgx.Conn, serverName
 	}
 	query, args, _ := qbuilder.PlaceholderFormat(sqrl.Dollar).ToSql()
 	log.Tracef("query: %s; args: %#v", query, args)
-	schemaRows, err := dbConnection.Query(ctx, query, args...)
+	schemaRows, err := dbConnection.Query(query, args...)
 	if err != nil {
 		log.Errorf("error listing schemas: %s", err)
 		return nil, err
@@ -260,7 +260,7 @@ func DropSchema(ctx context.Context, dbConnection *pgx.Conn, schema model.Schema
 		query = fmt.Sprintf("%s CASCADE", query)
 	}
 	log.Tracef("query: %s", query)
-	_, err := dbConnection.Exec(ctx, query)
+	_, err := dbConnection.Exec(query)
 	if err != nil {
 		log.Errorf("error dropping schema: %s", err)
 		return err
@@ -311,7 +311,7 @@ func importSchemaEnums(ctx context.Context, dbConnection *pgx.Conn, schema model
 		}
 		query = fmt.Sprintf("%s %s )", query, strings.Join(quotedEnumStrings, ","))
 		log.Tracef("query: %s", query)
-		_, err = dbConnection.Exec(ctx, query)
+		_, err = dbConnection.Exec(query)
 		if err != nil {
 			log.Errorf("error creating local enum type: %s", err)
 			return err
@@ -355,7 +355,7 @@ func ImportSchema(ctx context.Context, dbConnection *pgx.Conn, serverName string
 	sb.WriteString(" INTO ")
 	sb.WriteString(schema.LocalSchema)
 	log.Tracef("query: %s", sb.String())
-	_, err = dbConnection.Exec(ctx, sb.String())
+	_, err = dbConnection.Exec(sb.String())
 	if err != nil {
 		log.Errorf("error importing foreign schema: %s", err)
 		return err
@@ -372,7 +372,7 @@ func ImportSchema(ctx context.Context, dbConnection *pgx.Conn, serverName string
 			sb.WriteString(user)
 			query := sb.String()
 			log.Tracef("query: %s", query)
-			_, err = dbConnection.Exec(ctx, query)
+			_, err = dbConnection.Exec(query)
 			if err != nil {
 				log.Errorf("error granting usage to local user: %s", err)
 				return err
@@ -385,7 +385,7 @@ func ImportSchema(ctx context.Context, dbConnection *pgx.Conn, serverName string
 			sb.WriteString(user)
 			query = sb.String()
 			log.Tracef("query: %s", query)
-			_, err = dbConnection.Exec(ctx, query)
+			_, err = dbConnection.Exec(query)
 			if err != nil {
 				log.Errorf("error granting select to local user: %s", err)
 				return err

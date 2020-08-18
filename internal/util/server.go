@@ -6,7 +6,7 @@ import (
 	"github.com/alewgbl/fdwctl/internal/logger"
 	"github.com/alewgbl/fdwctl/internal/model"
 	"github.com/elgris/sqrl"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx"
 	"strings"
 )
 
@@ -31,7 +31,7 @@ func GetServers(ctx context.Context, dbConnection *pgx.Conn) ([]model.ForeignSer
 		return nil, err
 	}
 	log.Tracef("query: %s", query)
-	rows, err := dbConnection.Query(ctx, query)
+	rows, err := dbConnection.Query(query)
 	if err != nil {
 		log.Errorf("error querying for servers: %s", err)
 		return nil, err
@@ -70,7 +70,7 @@ func DropServer(ctx context.Context, dbConnection *pgx.Conn, servername string, 
 		query = fmt.Sprintf("%s CASCADE", query)
 	}
 	log.Tracef("query: %s", query)
-	_, err := dbConnection.Exec(ctx, query)
+	_, err := dbConnection.Exec(query)
 	if err != nil {
 		log.Errorf("error dropping server: %s", err)
 		return err
@@ -89,7 +89,7 @@ func CreateServer(ctx context.Context, dbConnection *pgx.Conn, server model.Fore
 		server.DB,
 	)
 	log.Tracef("query: %s", query)
-	_, err := dbConnection.Exec(ctx, query)
+	_, err := dbConnection.Exec(query)
 	if err != nil {
 		log.Errorf("error creating server: %s", err)
 		return err
@@ -114,7 +114,7 @@ func UpdateServer(ctx context.Context, dbConnection *pgx.Conn, server model.Fore
 	}
 	query = fmt.Sprintf("%s %s )", query, strings.Join(opts, ","))
 	log.Tracef("query: %s", query)
-	_, err := dbConnection.Exec(ctx, query)
+	_, err := dbConnection.Exec(query)
 	if err != nil {
 		log.Errorf("error updating server: %s", err)
 		return err
@@ -128,7 +128,7 @@ func UpdateServerName(ctx context.Context, dbConnection *pgx.Conn, server model.
 		WithField("function", "UpdateServerName")
 	query := fmt.Sprintf("ALTER SERVER %s RENAME TO %s", server.Name, newServerName)
 	log.Tracef("query: %s", query)
-	_, err := dbConnection.Exec(ctx, query)
+	_, err := dbConnection.Exec(query)
 	if err != nil {
 		log.Errorf("error renaming server object: %s", err)
 		return err

@@ -6,7 +6,7 @@ import (
 	"github.com/alewgbl/fdwctl/internal/logger"
 	"github.com/alewgbl/fdwctl/internal/model"
 	"github.com/elgris/sqrl"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx"
 	"strings"
 )
 
@@ -44,7 +44,7 @@ func GetUserMapsForServer(ctx context.Context, dbConnection *pgx.Conn, foreignSe
 		return nil, err
 	}
 	log.Tracef("query: %s, args: %#v", query, qArgs)
-	userRows, err := dbConnection.Query(ctx, query, qArgs...)
+	userRows, err := dbConnection.Query(query, qArgs...)
 	if err != nil {
 		log.Errorf("error getting users for server: %s", err)
 		return nil, err
@@ -94,7 +94,7 @@ func DropUserMap(ctx context.Context, dbConnection *pgx.Conn, usermap model.User
 	}
 	query := fmt.Sprintf("DROP USER MAPPING IF EXISTS FOR %s SERVER %s", usermap.LocalUser, usermap.ServerName)
 	log.Tracef("query: %s", query)
-	_, err := dbConnection.Exec(ctx, query)
+	_, err := dbConnection.Exec(query)
 	if err != nil {
 		log.Errorf("error dropping user mapping: %s", err)
 		return err
@@ -131,7 +131,7 @@ func CreateUserMap(ctx context.Context, dbConnection *pgx.Conn, usermap model.Us
 	// FIXME: There could be no password at all; check for a password before using it in the SQL statement
 	query := fmt.Sprintf("CREATE USER MAPPING FOR %s SERVER %s OPTIONS (user '%s', password '%s')", usermap.LocalUser, usermap.ServerName, usermap.RemoteUser, secretValue)
 	log.Tracef("query: %s", query)
-	_, err = dbConnection.Exec(ctx, query)
+	_, err = dbConnection.Exec(query)
 	if err != nil {
 		log.Errorf("error creating user mapping: %s", err)
 		return err
@@ -159,7 +159,7 @@ func UpdateUserMap(ctx context.Context, dbConnection *pgx.Conn, usermap model.Us
 	}
 	query = fmt.Sprintf("%s %s )", query, strings.Join(optArgs, ", "))
 	log.Tracef("query: %s", query)
-	_, err := dbConnection.Exec(ctx, query)
+	_, err := dbConnection.Exec(query)
 	if err != nil {
 		log.Errorf("error editing user mapping: %s", err)
 		return err

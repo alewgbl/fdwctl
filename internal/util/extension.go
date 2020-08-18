@@ -6,7 +6,7 @@ import (
 	"github.com/alewgbl/fdwctl/internal/logger"
 	"github.com/alewgbl/fdwctl/internal/model"
 	"github.com/elgris/sqrl"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx"
 )
 
 // GetExtensions returns a list of installed extensions
@@ -22,7 +22,7 @@ func GetExtensions(ctx context.Context, dbConnection *pgx.Conn) ([]model.Extensi
 		log.Errorf("error creating query: %s", err)
 		return nil, err
 	}
-	rows, err := dbConnection.Query(ctx, query)
+	rows, err := dbConnection.Query(query)
 	if err != nil {
 		log.Errorf("error querying for extensions: %s", err)
 		return nil, err
@@ -82,7 +82,7 @@ func DiffExtensions(dStateExts []model.Extension, dbExts []model.Extension) (ext
 func CreateExtension(ctx context.Context, dbConnection *pgx.Conn, ext model.Extension) error {
 	log := logger.Log(ctx).
 		WithField("function", "CreateExtension")
-	_, err := dbConnection.Exec(ctx, fmt.Sprintf(`CREATE EXTENSION IF NOT EXISTS %s`, ext.Name))
+	_, err := dbConnection.Exec(fmt.Sprintf(`CREATE EXTENSION IF NOT EXISTS %s`, ext.Name))
 	if err != nil {
 		return logger.ErrorfAsError(log, "error creating extension %s: %s", ext.Name, err)
 	}
@@ -93,7 +93,7 @@ func CreateExtension(ctx context.Context, dbConnection *pgx.Conn, ext model.Exte
 func DropExtension(ctx context.Context, dbConnection *pgx.Conn, ext model.Extension) error {
 	log := logger.Log(ctx).
 		WithField("function", "DropExtension")
-	_, err := dbConnection.Exec(ctx, fmt.Sprintf(`DROP EXTENSION IF EXISTS %s`, ext.Name))
+	_, err := dbConnection.Exec(fmt.Sprintf(`DROP EXTENSION IF EXISTS %s`, ext.Name))
 	if err != nil {
 		return logger.ErrorfAsError(log, "error dropping extension %s: %s", ext.Name, err)
 	}

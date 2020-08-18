@@ -7,7 +7,7 @@ import (
 	"github.com/alewgbl/fdwctl/internal/logger"
 	"github.com/alewgbl/fdwctl/internal/model"
 	"github.com/alewgbl/fdwctl/internal/util"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx"
 	"github.com/spf13/cobra"
 )
 
