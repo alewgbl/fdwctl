@@ -47,6 +47,7 @@ var (
 	localUser            string
 	remoteUser           string
 	remotePassword       string
+	grantSchema          string
 	serverName           string
 	localSchemaName      string
 	remoteSchemaName     string
@@ -67,6 +68,7 @@ func init() {
 	createUsermapCmd.Flags().StringVar(&localUser, "localuser", "", "local user name")
 	createUsermapCmd.Flags().StringVar(&remoteUser, "remoteuser", "", "remote user name")
 	createUsermapCmd.Flags().StringVar(&remotePassword, "remotepassword", "", "remote user password")
+	createUsermapCmd.Flags().StringVar(&grantSchema, "grantschema", "", "schema to grant read permissions on for the local user")
 	_ = createUsermapCmd.MarkFlagRequired("servername")
 	_ = createUsermapCmd.MarkFlagRequired("localuser")
 	_ = createUsermapCmd.MarkFlagRequired("remoteuser")
@@ -163,6 +165,7 @@ func createUsermap(cmd *cobra.Command, _ []string) {
 		RemoteSecret: model.Secret{
 			Value: remotePassword,
 		},
+		GrantSchema: grantSchema,
 	})
 	if err != nil {
 		log.Errorf("error creating user mapping: %s", err)

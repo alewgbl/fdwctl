@@ -27,3 +27,6 @@ lint:
 
 test:
 	CGO_ENABLED=0 go test ./...
+
+install: clean build
+	cp ./fdwctl "$(shell go env GOPATH)/bin"
