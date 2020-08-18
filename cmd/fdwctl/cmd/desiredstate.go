@@ -184,9 +184,18 @@ func applyUserMaps(ctx context.Context, dbConnection *pgx.Conn, server model.For
 	}
 	// Update usermaps that are already there
 	for _, usermapToUpdate := range usModify {
+		usermapToUpdate.ServerName = dsServer.Name
 		dbUserMap := util.FindUserMap(dbServerUsermaps, usermapToUpdate.LocalUser)
 		if dbUserMap == nil {
 			return logger.ErrorfAsError(log, "cannot find user mapping for local user %s", usermapToUpdate.LocalUser)
+		}
+		if util.SecretIsDefined(usermapToUpdate.RemoteSecret) {
+			remoteSecret := ""
+			remoteSecret, err = util.GetSecret(ctx, usermapToUpdate.RemoteSecret)
+			if err != nil {
+				return logger.ErrorfAsError(log, "error getting secret value: %s", err)
+			}
+			usermapToUpdate.RemoteSecret.Value = remoteSecret
 		}
 		if !usermapToUpdate.Equals(*dbUserMap) {
 			err = util.UpdateUserMap(ctx, dbConnection, usermapToUpdate)
@@ -206,7 +215,7 @@ func applySchemas(ctx context.Context, dbConnection *pgx.Conn, server model.Fore
 	log := logger.Log(ctx).
 		WithField("function", "applySchemas")
 	// Get DB remote schemas
-	dbSchemas, err := util.GetSchemas(ctx, dbConnection)
+	dbSchemas, err := util.GetSchemasForServer(ctx, dbConnection, server.Name)
 	if err != nil {
 		log.Errorf("error getting remote schemas: %s", err)
 		return err

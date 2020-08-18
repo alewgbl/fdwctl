@@ -122,7 +122,7 @@ func listUsermap(cmd *cobra.Command, args []string) {
 func listSchema(cmd *cobra.Command, _ []string) {
 	log := logger.Log(cmd.Context()).
 		WithField("function", "listSchema")
-	schemas, err := util.GetSchemas(cmd.Context(), dbConnection)
+	schemas, err := util.GetSchemasForServer(cmd.Context(), dbConnection, "")
 	if err != nil {
 		log.Errorf("error getting schemas: %s", err)
 		return

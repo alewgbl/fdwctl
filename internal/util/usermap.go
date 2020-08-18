@@ -10,6 +10,12 @@ import (
 	"strings"
 )
 
+const (
+	// usermapSQLPrefix is the WITH clause used as a prefix on the SQL statement to retrieve usermaps from the DB
+	usermapSQL = `WITH remoteuser AS (SELECT authorization_identifier, foreign_server_name, option_value AS remoteuser FROM information_schema.user_mapping_options WHERE option_name = 'user'),
+remotepassword AS (SELECT authorization_identifier, foreign_server_name, option_value AS remotepassword FROM information_schema.user_mapping_options WHERE option_name = 'password')`
+)
+
 func FindUserMap(usermaps []model.UserMap, localuser string) *model.UserMap {
 	for _, usermap := range usermaps {
 		if usermap.LocalUser == localuser {
@@ -23,13 +29,12 @@ func GetUserMapsForServer(ctx context.Context, dbConnection *pgx.Conn, foreignSe
 	log := logger.Log(ctx).
 		WithField("function", "GetUserMapsForServer")
 	qbuilder := sqrl.
-		Select("u.authorization_identifier", "ou.option_value", "op.option_value", "s.srvname").
-		From("information_schema.user_mappings u").
-		Join("information_schema.user_mapping_options ou ON ou.authorization_identifier = u.authorization_identifier AND ou.option_name = 'user'").
-		Join("information_schema.user_mapping_options op ON op.authorization_identifier = u.authorization_identifier AND op.option_name = 'password'").
-		Join("pg_user_mappings s ON s.usename = u.authorization_identifier")
+		Select("ru.authorization_identifier", "ru.remoteuser", "rp.remotepassword", "ru.foreign_server_name").
+		From("remoteuser ru").
+		Join("remotepassword rp ON ru.authorization_identifier = rp.authorization_identifier AND ru.foreign_server_name = rp.foreign_server_name")
+	qbuilder.Prefix(usermapSQL)
 	if foreignServer != "" {
-		qbuilder = qbuilder.Where(sqrl.Eq{"s.srvname": foreignServer})
+		qbuilder = qbuilder.Where(sqrl.Eq{"ru.foreign_server_name": foreignServer})
 	}
 	query, qArgs, err := qbuilder.
 		PlaceholderFormat(sqrl.Dollar).
@@ -48,6 +53,7 @@ func GetUserMapsForServer(ctx context.Context, dbConnection *pgx.Conn, foreignSe
 	users := make([]model.UserMap, 0)
 	for userRows.Next() {
 		user := new(model.UserMap)
+		user.RemoteSecret = model.Secret{}
 		err = userRows.Scan(&user.LocalUser, &user.RemoteUser, &user.RemoteSecret.Value, &user.ServerName)
 		if err != nil {
 			log.Errorf("error scanning result row: %s", err)

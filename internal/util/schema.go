@@ -63,7 +63,6 @@ func ensureSchema(ctx context.Context, dbConnection *pgx.Conn, schemaName string
 
 // getEnums returns a list of ENUM types
 func getEnums(ctx context.Context, dbConnection *pgx.Conn) ([]string, error) {
-	// FIXME: Doesn't this need to be constrained to a particular schema?
 	log := logger.Log(ctx).
 		WithField("function", "getEnums")
 	query, args, err := sqrl.
@@ -101,7 +100,7 @@ func getSchemaEnumsUsedInTables(ctx context.Context, dbConnection *pgx.Conn, sch
 	log := logger.Log(ctx).
 		WithField("function", "getSchemaEnumsUsedInTables")
 	query, args, err := sqrl.
-		Select("cuu.udt_name").
+		Select("DISTINCT cuu.udt_name").
 		From("information_schema.column_udt_usage cuu").
 		Join("pg_type t ON t.typname = cuu.udt_name").
 		Where(sqrl.And{
@@ -170,22 +169,24 @@ func getEnumStrings(ctx context.Context, dbConnection *pgx.Conn, enumType string
 	return enumStrings, nil
 }
 
-// GetSchemas returns a list of foreign schemas
-func GetSchemas(ctx context.Context, dbConnection *pgx.Conn) ([]model.Schema, error) {
+// GetSchemasForServer returns a list of foreign schemas
+func GetSchemasForServer(ctx context.Context, dbConnection *pgx.Conn, serverName string) ([]model.Schema, error) {
 	log := logger.Log(ctx).
-		WithField("function", "GetSchemas")
-	query, _, _ := sqrl.
+		WithField("function", "GetSchemasForServer")
+	qbuilder := sqrl.
 		Select("DISTINCT ft.foreign_table_schema", "ft.foreign_server_name", "ftos.option_value AS remote_schema").
 		From("information_schema.foreign_tables ft").
 		Join("information_schema.foreign_table_options ftos ON " +
 			"ftos.foreign_table_schema = ft.foreign_table_schema " +
 			"AND ftos.foreign_table_catalog = ft.foreign_table_catalog " +
 			"AND ftos.foreign_table_name = ft.foreign_table_name " +
-			"AND ftos.option_name = 'schema_name'").
-		PlaceholderFormat(sqrl.Dollar).
-		ToSql()
-	log.Tracef("query: %s", query)
-	schemaRows, err := dbConnection.Query(ctx, query)
+			"AND ftos.option_name = 'schema_name'")
+	if serverName != "" {
+		qbuilder = qbuilder.Where(sqrl.Eq{"ft.foreign_server_name": serverName})
+	}
+	query, args, _ := qbuilder.PlaceholderFormat(sqrl.Dollar).ToSql()
+	log.Tracef("query: %s; args: %#v", query, args)
+	schemaRows, err := dbConnection.Query(ctx, query, args...)
 	if err != nil {
 		log.Errorf("error listing schemas: %s", err)
 		return nil, err

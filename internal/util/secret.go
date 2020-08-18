@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"errors"
@@ -46,26 +47,22 @@ func GetSecret(ctx context.Context, secret model.Secret) (string, error) {
 	// (4) K8s Secret
 	if secret.FromK8sSecret.Namespace != "" && secret.FromK8sSecret.SecretName != "" && secret.FromK8sSecret.SecretKey != "" {
 		kubectlArgs := []string{
-			fmt.Sprintf("-n %s", secret.FromK8sSecret.Namespace),
-			"get",
-			"secret",
-			secret.FromK8sSecret.SecretName,
-			fmt.Sprintf("-o jsonpath={.data.%s}", secret.FromK8sSecret.SecretKey),
+			"-c",
+			fmt.Sprintf(
+				"kubectl -n %s get secret %s -o jsonpath={.data.%s}",
+				secret.FromK8sSecret.Namespace,
+				secret.FromK8sSecret.SecretName,
+				secret.FromK8sSecret.SecretKey,
+			),
 		}
-		k8sCmd := exec.CommandContext(ctx, "kubectl", kubectlArgs...)
-		err := k8sCmd.Start()
+		var out bytes.Buffer
+		k8sCmd := exec.CommandContext(ctx, "/bin/sh", kubectlArgs...)
+		k8sCmd.Stdout = &out
+		err := k8sCmd.Run()
 		if err != nil {
 			return "", logger.ErrorfAsError(log, "error spawning kubectl: %s", err)
 		}
-		err = k8sCmd.Wait()
-		if err != nil {
-			return "", logger.ErrorfAsError(log, "error waiting for kubectl: %s", err)
-		}
-		b64Bytes, err := k8sCmd.Output()
-		if err != nil {
-			return "", logger.ErrorfAsError(log, "error reading kubectl output: %s", err)
-		}
-		rawBytes, err := base64.StdEncoding.DecodeString(string(b64Bytes))
+		rawBytes, err := base64.StdEncoding.DecodeString(out.String())
 		if err != nil {
 			return "", logger.ErrorfAsError(log, "error decoding base64: %s", err)
 		}

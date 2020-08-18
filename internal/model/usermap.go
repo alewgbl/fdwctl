@@ -14,5 +14,5 @@ type UserMap struct {
 
 // Equals determines if this object is equal to the supplied object
 func (um *UserMap) Equals(umap UserMap) bool {
-	return um.LocalUser == umap.LocalUser && um.RemoteUser == umap.RemoteUser && um.RemoteSecret.Equals(umap.RemoteSecret)
+	return um.LocalUser == umap.LocalUser && um.RemoteUser == umap.RemoteUser && um.RemoteSecret.Value == umap.RemoteSecret.Value
 }
