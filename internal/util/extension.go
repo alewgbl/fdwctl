@@ -3,10 +3,10 @@ package util
 import (
 	"context"
 	"fmt"
+	"github.com/alewgbl/fdwctl/internal/logger"
+	"github.com/alewgbl/fdwctl/internal/model"
 	"github.com/elgris/sqrl"
 	"github.com/jackc/pgx/v4"
-	"github.com/neflyte/fdwctl/internal/logger"
-	"github.com/neflyte/fdwctl/internal/model"
 )
 
 // GetExtensions returns a list of installed extensions

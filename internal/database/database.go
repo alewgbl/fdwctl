@@ -5,8 +5,8 @@ package database
 
 import (
 	"context"
+	"github.com/alewgbl/fdwctl/internal/logger"
 	"github.com/jackc/pgx/v4"
-	"github.com/neflyte/fdwctl/internal/logger"
 )
 
 // GetConnection returns an established connection to a database using the supplied connection string

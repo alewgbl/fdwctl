@@ -29,7 +29,7 @@ The CLI interface is written with the original intention of being used as part o
 #### Using Go
 
 ```shell script
-go install https://github.com/neflyte/fdwctl/cmd/fdwctl
+go install https://github.com/alewgbl/fdwctl/cmd/fdwctl
 ```
 
 ### Usage

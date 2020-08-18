@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/neflyte/fdwctl/cmd/fdwctl/cmd"
+	"github.com/alewgbl/fdwctl/cmd/fdwctl/cmd"
 )
 
 func main() {

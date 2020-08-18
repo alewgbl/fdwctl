@@ -5,9 +5,9 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/neflyte/fdwctl/internal/logger"
-	"github.com/neflyte/fdwctl/internal/model"
-	"github.com/neflyte/fdwctl/internal/util"
+	"github.com/alewgbl/fdwctl/internal/logger"
+	"github.com/alewgbl/fdwctl/internal/model"
+	"github.com/alewgbl/fdwctl/internal/util"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 	"os"

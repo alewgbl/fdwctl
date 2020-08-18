@@ -3,9 +3,9 @@ package util
 import (
 	"context"
 	"fmt"
+	"github.com/alewgbl/fdwctl/internal/logger"
 	"github.com/elgris/sqrl"
 	"github.com/jackc/pgx/v4"
-	"github.com/neflyte/fdwctl/internal/logger"
 )
 
 func EnsureUser(ctx context.Context, dbConnection *pgx.Conn, userName string, userPassword string) error {

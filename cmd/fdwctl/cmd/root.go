@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/neflyte/fdwctl/internal/config"
-	"github.com/neflyte/fdwctl/internal/logger"
-	"github.com/neflyte/fdwctl/internal/util"
+	"github.com/alewgbl/fdwctl/internal/config"
+	"github.com/alewgbl/fdwctl/internal/logger"
+	"github.com/alewgbl/fdwctl/internal/util"
 	"github.com/spf13/cobra"
 )
 

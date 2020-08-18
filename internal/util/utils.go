@@ -6,9 +6,9 @@ package util
 import (
 	"context"
 	"fmt"
+	"github.com/alewgbl/fdwctl/internal/logger"
+	"github.com/alewgbl/fdwctl/internal/model"
 	"github.com/neflyte/configmap"
-	"github.com/neflyte/fdwctl/internal/logger"
-	"github.com/neflyte/fdwctl/internal/model"
 	"github.com/thoas/go-funk"
 	"net/url"
 	"regexp"
