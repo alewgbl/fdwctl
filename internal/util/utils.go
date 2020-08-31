@@ -6,13 +6,14 @@ package util
 import (
 	"context"
 	"fmt"
-	"github.com/alewgbl/fdwctl/internal/logger"
-	"github.com/alewgbl/fdwctl/internal/model"
-	"github.com/neflyte/configmap"
-	"github.com/thoas/go-funk"
 	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/neflyte/configmap"
+
+	"github.com/alewgbl/fdwctl/internal/logger"
+	"github.com/alewgbl/fdwctl/internal/model"
 )
 
 const (
@@ -36,7 +37,7 @@ var (
 	// urlStringRE is a regular expression that matches a URL-style connection string
 	urlStringRE = regexp.MustCompile(`^(postgres[q]?[l]?://)?([^:/\s]+)(:([^/]*))?(/\w+\.)*([^#?\s]+)(\?([^#]*))?(#(.*))?$`)
 	// pgConnectionFields is a list of connection string fields that must exist for the string to be considered valid
-	pgConnectionFields = []interface{}{pgConnHost, pgConnPort, pgConnDBName, pgConnUser, pgConnSSLMode}
+	pgConnectionFields = []string{pgConnHost, pgConnPort, pgConnDBName, pgConnUser, pgConnSSLMode}
 )
 
 // StringCoalesce returns the first string in the supplied arguments that is non-empty when trimmed. If there
@@ -56,8 +57,14 @@ func StartsWithNumber(str string) bool {
 }
 
 // mapContainsKeys determines if the supplied map (haystack) contains all the supplied keys (needles)
-func mapContainsKeys(haystack configmap.ConfigMap, needles []interface{}) bool {
-	return funk.Every(funk.Keys(haystack), needles...)
+func mapContainsKeys(haystack configmap.ConfigMap, needles ...string) bool {
+	found := 0
+	for _, needle := range needles {
+		if haystack.Has(needle) {
+			found++
+		}
+	}
+	return found == len(needles)
 }
 
 // connectionStringWithSecret returns a URL populated with a credential obtained using the supplied secret configuration
@@ -109,7 +116,7 @@ func ResolveConnectionString(connStr string, secret *model.Secret) string {
 		}
 		// Now we can try to construct an URL-style string. First we see if there
 		// is enough information to do so
-		if mapContainsKeys(connMap, pgConnectionFields) {
+		if mapContainsKeys(connMap, pgConnectionFields...) {
 			log.Trace("connMap has enough keys")
 			// Build the url.URL host string
 			urlHost := fmt.Sprintf("%s:%s", connMap.GetString(pgConnHost), connMap.GetString(pgConnPort))
