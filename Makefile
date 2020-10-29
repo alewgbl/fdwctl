@@ -1,13 +1,13 @@
 # fdwctl Makefile
 APPVERSION=0.0.1
 
+.PHONY: build build-docker clean start-docker stop-docker restart-docker lint test install
+
 build: lint test
 	CGO_ENABLED=0 go build -i -pkgdir "$(shell go env GOPATH)/pkg" -installsuffix nocgo -ldflags "-s -w -X main.cmd.AppVersion=$(APPVERSION)" -o fdwctl ./cmd/fdwctl
 
-.PHONY: build build-docker clean start-docker stop-docker restart-docker lint test
-
 build-docker: clean lint test
-	docker build --no-cache --build-arg "APPVERSION=$(APPVERSION)" -t "neflyte/fdwctl:$(APPVERSION)" .
+	docker build --no-cache --build-arg "APPVERSION=$(APPVERSION)" -t "alewgbl/fdwctl:$(APPVERSION)" -t "alewgbl/fdwctl:latest" .
 
 clean:
 	{ [ -f "./fdwctl" ] && rm -f ./fdwctl; } || true

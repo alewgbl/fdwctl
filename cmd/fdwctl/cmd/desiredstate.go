@@ -19,7 +19,7 @@ var (
 		Long:              "Apply a desired state configuration to the FDW database",
 		PersistentPreRunE: preDoDesiredState,
 		PersistentPostRun: postDoDesiredState,
-		Run:               doDesiredState,
+		RunE:              doDesiredState,
 	}
 )
 
@@ -39,14 +39,14 @@ func postDoDesiredState(cmd *cobra.Command, _ []string) {
 	database.CloseConnection(cmd.Context(), dbConnection)
 }
 
-func doDesiredState(cmd *cobra.Command, _ []string) {
+func doDesiredState(cmd *cobra.Command, _ []string) error {
 	log := logger.Log(cmd.Context()).
 		WithField("function", "doDesiredState")
 	// Apply Extensions
 	err := applyExtensions(cmd.Context(), dbConnection)
 	if err != nil {
 		log.Errorf("error applying extensions: %s", err)
-		return
+		return err
 	}
 	// Convert DState servers to ForeignServers
 	dStateServers := config.Instance().DesiredState.Servers
@@ -54,7 +54,7 @@ func doDesiredState(cmd *cobra.Command, _ []string) {
 	dbServers, err := util.GetServers(cmd.Context(), dbConnection)
 	if err != nil {
 		log.Errorf("error getting foreign servers: %s", err)
-		return
+		return err
 	}
 	// Diff servers
 	serversInDBButNotInDState, serversInDStateButNotInDB, serversAlreadyInDB := util.DiffForeignServers(dStateServers, dbServers)
@@ -63,7 +63,7 @@ func doDesiredState(cmd *cobra.Command, _ []string) {
 		err = util.DropServer(cmd.Context(), dbConnection, serverNotInDState.Name, true)
 		if err != nil {
 			log.Errorf("error dropping server %s that is not in desired state: %s", serverNotInDState.Name, err)
-			return
+			return err
 		}
 		log.Infof("server %s dropped", serverNotInDState.Name)
 	}
@@ -72,7 +72,7 @@ func doDesiredState(cmd *cobra.Command, _ []string) {
 		err = util.CreateServer(cmd.Context(), dbConnection, serverNotInDB)
 		if err != nil {
 			log.Errorf("error creating server: %s", err)
-			return
+			return err
 		}
 		log.Infof("server %s created", serverNotInDB.Name)
 	}
@@ -81,14 +81,14 @@ func doDesiredState(cmd *cobra.Command, _ []string) {
 		dsServer := util.FindForeignServer(config.Instance().DesiredState.Servers, serverAlreadyInDB.Name)
 		if dsServer == nil {
 			log.Errorf("cannot find desired state server %s", serverAlreadyInDB.Name)
-			return
+			return err
 		}
 		dbServer := *dsServer
 		if !dbServer.Equals(serverAlreadyInDB) {
 			err = util.UpdateServer(cmd.Context(), dbConnection, serverAlreadyInDB)
 			if err != nil {
 				log.Errorf("error updating server: %s", err)
-				return
+				return err
 			}
 			log.Infof("server %s updated", serverAlreadyInDB.Name)
 		} else {
@@ -104,15 +104,16 @@ func doDesiredState(cmd *cobra.Command, _ []string) {
 		err = applyUserMaps(cmd.Context(), dbConnection, serverAlreadyInDB)
 		if err != nil {
 			log.Errorf("error applying usermaps for server %s: %s", serverAlreadyInDB.Name, err)
-			return
+			return err
 		}
 		err = applySchemas(cmd.Context(), dbConnection, serverAlreadyInDB)
 		if err != nil {
 			log.Errorf("error applying schemas for server %s: %s", serverAlreadyInDB.Name, err)
-			return
+			return err
 		}
 	}
 	log.Info("desired state applied.")
+	return nil
 }
 
 func applyExtensions(ctx context.Context, dbConnection *sql.DB) error {
