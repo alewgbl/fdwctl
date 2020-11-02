@@ -1,5 +1,5 @@
 # fdwctl Makefile
-APPVERSION=0.0.1
+APPVERSION=0.0.2
 
 .PHONY: build build-docker clean start-docker stop-docker restart-docker lint test install
 

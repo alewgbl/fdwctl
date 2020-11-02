@@ -21,7 +21,12 @@ var (
 		PersistentPostRun: postDoDesiredState,
 		RunE:              doDesiredState,
 	}
+	desiredStateRecreateSchemas = false
 )
+
+func init() {
+	desiredStateCmd.Flags().BoolVar(&desiredStateRecreateSchemas, "recreateschemas", false, "flag indicating that foreign schemas should be re-created")
+}
 
 func preDoDesiredState(cmd *cobra.Command, _ []string) error {
 	var err error
@@ -246,20 +251,24 @@ func applySchemas(ctx context.Context, dbConnection *sql.DB, server model.Foreig
 	}
 	// Drop + Re-Import all other schemas
 	for _, schemaToModify := range schModify {
-		// Drop
-		err = util.DropSchema(ctx, dbConnection, schemaToModify, true)
-		if err != nil {
-			log.Errorf("error dropping local schema %s: %s", schemaToModify.LocalSchema, err)
-			return err
+		if desiredStateRecreateSchemas {
+			// Drop
+			err = util.DropSchema(ctx, dbConnection, schemaToModify, true)
+			if err != nil {
+				log.Errorf("error dropping local schema %s: %s", schemaToModify.LocalSchema, err)
+				return err
+			}
+			// Import
+			err = util.ImportSchema(ctx, dbConnection, server.Name, schemaToModify)
+			if err != nil {
+				log.Errorf("error importing into local schema %s: %s", schemaToModify.LocalSchema, err)
+				return err
+			}
+			// Done
+			log.Infof("foreign schema %s re-imported", schemaToModify.RemoteSchema)
+		} else {
+			log.Infof("foreign schema %s exists; will not re-create it", schemaToModify.RemoteSchema)
 		}
-		// Import
-		err = util.ImportSchema(ctx, dbConnection, server.Name, schemaToModify)
-		if err != nil {
-			log.Errorf("error importing into local schema %s: %s", schemaToModify.LocalSchema, err)
-			return err
-		}
-		// Done
-		log.Infof("foreign schema %s re-imported", schemaToModify.RemoteSchema)
 	}
 	return nil
 }
